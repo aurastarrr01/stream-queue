@@ -98,15 +98,26 @@
     }
 
     /* CUSTOM GRADIENT RANGE SLIDERS */
-    input[type="range"].gradient-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 8px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #e0f2fe 0%, #38bdf8 50%, #0284c7 100%);
-      outline: none;
-      border: 1px solid #bae6fd;
+/* ... existing code ... -->
+    initAuth();
+  </script>
+
+  <!-- Google Fonts: Itim, Prompt, Kanit, Mitr, Bai Jamjuree, Sarabun, Press Start 2P, VT323 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@600;700&family=Itim&family=Kanit:wght@600;700;800&family=Mitr:wght@600;700&family=Press+Start+2P&family=Prompt:wght@600;700;800&family=Sarabun:wght@700;800&family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Itim', 'Prompt', sans-serif;
+      user-select: none;
+    }
+
+    /* Transparent Overlay Mode for TikTok Live Studio */
+    body.mode-overlay {
+      background-color: transparent !important;
+      background-image: none !important;
+      overflow: hidden;
     }
 
     input[type="range"].gradient-slider::-webkit-slider-thumb {
@@ -145,6 +156,7 @@
       --sz-amt: 38px;
       --sz-cur: 38px;
       --item-spacing: 32px;
+      --line-gap: 8px;
       --queue-color-1: #ffffff;
       --queue-color-2: #38bdf8;
       --queue-stroke-c: #000000;
@@ -210,6 +222,11 @@
       pointer-events: none;
     }
 
+    /* Dynamic Line Gap Container */
+    .queue-item-row {
+      margin-bottom: var(--line-gap, 8px);
+    }
+
     /* Element specific font sizes */
     .sz-num { font-size: var(--sz-num, 38px); }
     .sz-name { font-size: var(--sz-name, 38px); }
@@ -254,9 +271,9 @@
         </div>
         <div>
           <h1 class="text-xl font-extrabold text-slate-800 tracking-wide flex items-center gap-2">
-            ระบบจัดคิวสตรีมเมอร์ <span class="text-xs bg-sky-100 text-sky-700 font-bold border border-sky-300 px-2.5 py-0.5 rounded-full">ปรับแต่งชื่อลิงก์คิวได้</span>
+            ระบบจัดคิวสตรีมเมอร์ <span class="text-xs bg-sky-100 text-sky-700 font-bold border border-sky-300 px-2.5 py-0.5 rounded-full">พร้อมใช้งานทันที</span>
           </h1>
-          <p class="text-xs text-slate-500">ปรับขนาดลำดับคิว, ชื่อ, ตัวเลขเงิน และสกุลเงินแยกกันได้อย่างอิสระ</p>
+          <p class="text-xs text-slate-500">ปรับขนาดลำดับคิว ชื่อ ตัวเลขเงิน สกุลเงิน ระยะห่างบรรทัด และไอเทมแยกกันได้อย่างอิสระ</p>
         </div>
       </div>
 
@@ -312,7 +329,6 @@
             <h2 class="text-sm font-bold text-sky-700 uppercase tracking-wider flex items-center gap-2">
               <i class="fa-solid fa-wand-magic-sparkles text-sky-500"></i> ปรับแต่งรูปแบบและขนาด
             </h2>
-            <!-- Save & Reset Buttons -->
             <div class="flex items-center gap-2">
               <button onclick="resetSettings()" class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg transition flex items-center gap-1">
                 <i class="fa-solid fa-rotate-left"></i> รีเซ็ต
@@ -324,7 +340,6 @@
           </div>
 
           <div class="space-y-4 text-xs">
-            <!-- Queue Header Text Input & Global Currency Suffix -->
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block font-semibold text-slate-700 mb-1">ข้อความหัวข้อคิว</label>
@@ -338,7 +353,6 @@
               </div>
             </div>
 
-            <!-- Font Family Selection -->
             <div>
               <label class="block font-semibold text-slate-700 mb-1">เลือกฟอนต์ (Font)</label>
               <select id="setting-font" onchange="updateSettings()" class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:border-sky-500 focus:outline-none">
@@ -353,11 +367,9 @@
               </select>
             </div>
 
-            <!-- COLLAPSIBLE ACCORDION GROUP FOR SIZES & SPACING -->
             <div class="space-y-2 border-t border-sky-100 pt-3">
               <span class="font-bold text-slate-700 block mb-1">📐 ปรับขนาดและระยะห่าง (คลิกเพื่อเปิด/ซ่อน)</span>
 
-              <!-- Accordion: Size Title -->
               <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
                 <button type="button" onclick="toggleAccordion('acc-sz-title')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
                   <span class="flex items-center gap-2"><i class="fa-solid fa-heading text-sky-500"></i> ขนาดหัวข้อคิว</span>
@@ -372,13 +384,9 @@
                     </div>
                   </div>
                   <input type="range" id="setting-sz-title" min="14" max="100" value="42" oninput="syncControl('sz-title', 'range')" class="gradient-slider">
-                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>14px</span><span>42px</span><span>100px</span>
-                  </div>
                 </div>
               </div>
 
-              <!-- Accordion: Size Num -->
               <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
                 <button type="button" onclick="toggleAccordion('acc-sz-num')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
                   <span class="flex items-center gap-2"><i class="fa-solid fa-list-ol text-sky-500"></i> ขนาดลำดับคิว (1. 2.)</span>
@@ -393,13 +401,9 @@
                     </div>
                   </div>
                   <input type="range" id="setting-sz-num" min="14" max="100" value="38" oninput="syncControl('sz-num', 'range')" class="gradient-slider">
-                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>14px</span><span>38px</span><span>100px</span>
-                  </div>
                 </div>
               </div>
 
-              <!-- Accordion: Size Name -->
               <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
                 <button type="button" onclick="toggleAccordion('acc-sz-name')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
                   <span class="flex items-center gap-2"><i class="fa-solid fa-user text-sky-500"></i> ขนาดชื่อผู้เล่น</span>
@@ -414,13 +418,9 @@
                     </div>
                   </div>
                   <input type="range" id="setting-sz-name" min="14" max="100" value="38" oninput="syncControl('sz-name', 'range')" class="gradient-slider">
-                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>14px</span><span>38px</span><span>100px</span>
-                  </div>
                 </div>
               </div>
 
-              <!-- Accordion: Size Amount & Currency -->
               <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
                 <button type="button" onclick="toggleAccordion('acc-sz-amt')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
                   <span class="flex items-center gap-2"><i class="fa-solid fa-coins text-sky-500"></i> ขนาดจำนวนเงินและสกุลเงิน</span>
@@ -451,10 +451,9 @@
                 </div>
               </div>
 
-              <!-- Accordion: Spacing -->
               <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
                 <button type="button" onclick="toggleAccordion('acc-spacing')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
-                  <span class="flex items-center gap-2"><i class="fa-solid fa-arrows-left-right text-sky-500"></i> ระยะห่างรายการ</span>
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-arrows-left-right text-sky-500"></i> ระยะห่างรายการซ้าย-ขวา</span>
                   <i id="acc-spacing-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
                 </button>
                 <div id="acc-spacing" class="hidden p-3.5 bg-white border-t border-sky-100 space-y-2">
@@ -466,14 +465,27 @@
                     </div>
                   </div>
                   <input type="range" id="setting-spacing" min="8" max="200" value="32" oninput="syncControl('spacing', 'range')" class="gradient-slider">
-                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>8px</span><span>32px</span><span>200px</span>
+                </div>
+              </div>
+
+              <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
+                <button type="button" onclick="toggleAccordion('acc-line-gap')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-arrows-up-down text-sky-500"></i> ระยะห่างระหว่างบรรทัด (บน-ล่าง)</span>
+                  <i id="acc-line-gap-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+                </button>
+                <div id="acc-line-gap" class="hidden p-3.5 bg-white border-t border-sky-100 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500 text-[11px]">พิกเซล (px)</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="setting-line-gap-num" min="0" max="100" value="8" oninput="syncControl('line-gap', 'num')" class="w-16 bg-slate-50 border border-sky-300 text-sky-700 font-bold rounded-lg px-2 py-1 text-center text-xs focus:outline-none focus:border-sky-500">
+                      <span class="text-[10px] text-slate-400">px</span>
+                    </div>
                   </div>
+                  <input type="range" id="setting-line-gap" min="0" max="100" value="8" oninput="syncControl('line-gap', 'range')" class="gradient-slider">
                 </div>
               </div>
             </div>
 
-            <!-- Alignment Selection -->
             <div>
               <label class="block font-semibold text-slate-700 mb-1">การจัดวางตำแหน่ง (Alignment)</label>
               <select id="setting-align" onchange="updateSettings()" class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3 py-2 text-slate-800 focus:border-sky-500 focus:outline-none">
@@ -483,7 +495,6 @@
               </select>
             </div>
 
-            <!-- Color Fill / Gradient Options -->
             <div class="p-3.5 bg-sky-50/70 rounded-xl border border-sky-200 space-y-3">
               <div class="flex items-center justify-between">
                 <span class="font-bold text-slate-700">สีตัวหนังสือ (Text Color / Gradient)</span>
@@ -512,7 +523,6 @@
               </div>
             </div>
 
-            <!-- Outward Stroke Settings -->
             <div class="p-3.5 bg-sky-50/70 rounded-xl border border-sky-200 space-y-3">
               <div class="flex items-center justify-between">
                 <div>
@@ -577,7 +587,6 @@
               </div>
             </div>
 
-            <!-- Quick Add Amount Buttons -->
             <div class="grid grid-cols-4 gap-2 pt-1">
               <button type="button" onclick="addQuickAmount(10)" class="py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs rounded-lg font-bold transition">+10</button>
               <button type="button" onclick="addQuickAmount(20)" class="py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs rounded-lg font-bold transition">+20</button>
@@ -596,7 +605,6 @@
             </div>
           </form>
 
-          <!-- ADMIN LIST TABLE -->
           <div class="mt-5 pt-4 border-t border-sky-100">
             <div class="flex items-center justify-between mb-2.5">
               <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">รายการคิวปัจจุบัน (เรียงตามเงิน)</span>
@@ -621,17 +629,14 @@
           <span class="text-[11px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">พื้นหลังโปร่งใส</span>
         </div>
 
-        <!-- OVERLAY CONTAINER -->
         <div id="preview-box-bg" class="w-full p-4 rounded-2xl bg-slate-900 border-2 border-dashed border-sky-300 shadow-xl transition-all">
           <div id="overlay-wrapper" class="w-full min-h-[340px] flex flex-col items-start justify-start transition-all">
             
-            <!-- OVERLAY TITLE -->
             <div id="display-title" class="mb-2">
               <!-- Rendered Title -->
             </div>
 
-            <!-- QUEUE ITEMS LIST -->
-            <div id="display-queue-list" class="w-full space-y-1">
+            <div id="display-queue-list" class="w-full">
               <!-- Dynamic Items -->
             </div>
 
@@ -647,7 +652,6 @@
   <!-- CUSTOM COLOR PICKER MODAL/POPOVER -->
   <div id="custom-picker-popover" class="fixed inset-0 z-50 hidden bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeCustomPicker(event)">
     <div class="bg-[#18181b] border border-zinc-800 text-white rounded-2xl p-4 w-[280px] shadow-2xl space-y-3 relative" onclick="event.stopPropagation()">
-      <!-- Tabs header -->
       <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
         <div class="flex bg-zinc-900 p-0.5 rounded-lg text-xs font-semibold">
           <span class="px-3 py-1 bg-zinc-800 text-zinc-100 rounded-md">Custom</span>
@@ -657,18 +661,15 @@
         </button>
       </div>
 
-      <!-- Saturation / Value Box Canvas -->
       <div class="relative w-full h-[180px] rounded-xl overflow-hidden cursor-crosshair select-none" id="picker-sat-container">
         <canvas id="picker-sat-canvas" class="w-full h-full block rounded-xl"></canvas>
         <div id="picker-sat-handle" class="absolute w-4 h-4 rounded-full border-2 border-white shadow-md -translate-x-1/2 -translate-y-1/2 pointer-events-none" style="top:0%; left:0%;"></div>
       </div>
 
-      <!-- Hue Slider -->
       <div class="relative w-full h-4 rounded-full cursor-pointer select-none" id="picker-hue-container" style="background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);">
         <div id="picker-hue-handle" class="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-white bg-transparent shadow-md -translate-x-1/2 pointer-events-none" style="left:0%;"></div>
       </div>
 
-      <!-- Hex Output Input -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 flex items-center justify-between text-xs font-mono">
         <span class="text-zinc-400 font-bold">#</span>
         <input type="text" id="picker-hex-input" class="bg-transparent text-white font-bold w-full ml-1 focus:outline-none uppercase" onchange="onPickerHexInputChange(this.value)">
@@ -679,10 +680,10 @@
 
   <script>
     const STORAGE_KEY_QUEUE = 'minimal_queue_data_v7';
-    const STORAGE_KEY_SETTINGS = 'minimal_queue_settings_v7';
+    const STORAGE_KEY_SETTINGS = 'minimal_queue_settings_v8';
     const broadcastChannel = new BroadcastChannel('minimal_queue_sync_channel');
 
-    let currentPickerTarget = 'color1'; // 'color1' | 'color2' | 'stroke'
+    let currentPickerTarget = 'color1';
     let currentHSV = { h: 0, s: 1, v: 1 };
     let isDraggingSat = false;
     let isDraggingHue = false;
@@ -699,6 +700,7 @@
       szCur: 38,
       align: 'left',
       spacing: 32,
+      lineGap: 8,
       enableGradient: true,
       color1: '#ffffff',
       color2: '#38bdf8',
@@ -715,26 +717,53 @@
       const { queueDocRef, onSnapshot } = window.firebaseState;
       if (!queueDocRef) return;
       
-      // Listen to real-time updates from Firestore
       onSnapshot(queueDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
+          let shouldUpdate = false;
+          
           if (data.queueList) {
             queueList = data.queueList;
+            shouldUpdate = true;
           }
           if (data.settings) {
             settings = { ...settings, ...data.settings };
             applySettingsToUI();
+            shouldUpdate = true;
           }
-          renderStyle();
-          renderQueue();
+          if (shouldUpdate) {
+            renderStyle();
+            renderQueue();
+          }
         } else {
-          // If Firestore is empty, sync initial local state to Firestore
           saveDataToFirestore();
         }
       }, (error) => {
         console.error("Firestore realtime listener error:", error);
       });
+
+      // Periodic aggressive polling backup for overlay stream connection
+      setInterval(() => {
+        if (window.firebaseState && window.firebaseState.db) {
+          import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js").then(({ getDoc }) => {
+            getDoc(queueDocRef).then((docSnap) => {
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.queueList && JSON.stringify(data.queueList) !== JSON.stringify(queueList)) {
+                  queueList = data.queueList;
+                  renderQueue();
+                }
+                if (data.settings && JSON.stringify(data.settings) !== JSON.stringify(settings)) {
+                  settings = { ...settings, ...data.settings };
+                  applySettingsToUI();
+                  renderStyle();
+                  renderQueue();
+                }
+              }
+            }).catch(err => console.error("Poll check error:", err));
+          });
+        }
+      }, 2000);
     }
 
     function openCustomPicker(target, evt) {
@@ -764,11 +793,9 @@
       canvas.width = container.clientWidth || 248;
       canvas.height = container.clientHeight || 180;
 
-      // Event Listeners for Saturation/Value Drag
       container.onmousedown = (e) => { isDraggingSat = true; handleSatMove(e); };
       container.ontouchstart = (e) => { isDraggingSat = true; handleSatMove(e.touches[0]); };
 
-      // Event Listeners for Hue Drag
       const hueContainer = document.getElementById('picker-hue-container');
       hueContainer.onmousedown = (e) => { isDraggingHue = true; handleHueMove(e); };
       hueContainer.ontouchstart = (e) => { isDraggingHue = true; handleHueMove(e.touches[0]); };
@@ -815,26 +842,22 @@
       const width = canvas.width;
       const height = canvas.height;
 
-      // Render Hue base color
       const pureHueHex = hsvToHex(currentHSV.h, 1, 1);
       ctx.fillStyle = pureHueHex;
       ctx.fillRect(0, 0, width, height);
 
-      // Saturation gradient (white to transparent)
       const gradSat = ctx.createLinearGradient(0, 0, width, 0);
       gradSat.addColorStop(0, '#ffffff');
       gradSat.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = gradSat;
       ctx.fillRect(0, 0, width, height);
 
-      // Value gradient (transparent to black)
       const gradVal = ctx.createLinearGradient(0, 0, 0, height);
       gradVal.addColorStop(0, 'rgba(0,0,0,0)');
       gradVal.addColorStop(1, '#000000');
       ctx.fillStyle = gradVal;
       ctx.fillRect(0, 0, width, height);
 
-      // Position handle
       const satHandle = document.getElementById('picker-sat-handle');
       satHandle.style.left = `${currentHSV.s * 100}%`;
       satHandle.style.top = `${(1 - currentHSV.v) * 100}%`;
@@ -878,7 +901,6 @@
       renderQueue();
     }
 
-    // Color conversion utilities
     function hexToHsv(hex) {
       let c = hex.replace('#', '');
       if (c.length === 3) c = c.split('').map(x => x + x).join('');
@@ -933,7 +955,6 @@
       checkUrlParams();
       setupUrlInput();
 
-      // Multi-window Sync
       broadcastChannel.onmessage = (event) => {
         if (event.data) {
           if (event.data.type === 'QUEUE_UPDATE') {
@@ -948,7 +969,6 @@
         }
       };
 
-      // Storage Fallback Sync
       window.addEventListener('storage', (e) => {
         if (e.key === STORAGE_KEY_QUEUE) {
           queueList = JSON.parse(e.newValue || '[]');
@@ -985,20 +1005,10 @@
       const inputVal = document.getElementById('custom-link-name').value.trim();
       if (!inputVal) return;
 
-      // Clean ID (keep alphanumeric, underscores, hyphens)
       const cleanId = inputVal.replace(/[^a-zA-Z0-9_-]/g, '_');
       const url = new URL(window.location.href);
       url.searchParams.set('queue', cleanId);
       window.location.href = url.toString();
-    }
-
-    function changeLinkID() {
-      const inputVal = document.getElementById('custom-link-name').value.trim();
-      if (!inputVal) return;
-
-      const cleanId = inputVal.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const newUrl = `${window.location.origin}${window.location.pathname}?queue=${encodeURIComponent(cleanId)}`;
-      window.location.href = newUrl;
     }
 
     function loadData() {
@@ -1007,7 +1017,6 @@
         if (savedQueue) {
           queueList = JSON.parse(savedQueue);
         } else {
-          // Default Sample Queue
           queueList = [
             { id: '1', name: 'Us1', amount: 30 },
             { id: '2', name: 'us2', amount: 20 },
@@ -1048,8 +1057,12 @@
       broadcastChannel.postMessage({ type: 'QUEUE_UPDATE', payload: queueList });
       broadcastChannel.postMessage({ type: 'SETTINGS_UPDATE', payload: settings });
 
-      // Sync data live across all devices using Firestore
       saveDataToFirestore();
+      
+      // Force aggressive secondary cloud sync to prevent lag in external studio instances
+      setTimeout(() => {
+        saveDataToFirestore();
+      }, 500);
     }
 
     function applySettingsToUI() {
@@ -1057,13 +1070,13 @@
       document.getElementById('setting-currency').value = settings.defaultCurrency !== undefined ? settings.defaultCurrency : 'บาท';
       document.getElementById('setting-font').value = settings.font || 'Itim';
 
-      // Font Sizes - Range & Number Inputs
       setControlValues('sz-title', settings.szTitle || 42);
       setControlValues('sz-num', settings.szNum || 38);
       setControlValues('sz-name', settings.szName || 38);
       setControlValues('sz-amt', settings.szAmt || 38);
       setControlValues('sz-cur', settings.szCur || 38);
       setControlValues('spacing', settings.spacing || 32);
+      setControlValues('line-gap', settings.lineGap !== undefined ? settings.lineGap : 8);
       
       if (document.getElementById('setting-align')) document.getElementById('setting-align').value = settings.align || 'left';
 
@@ -1097,11 +1110,10 @@
       if (!rangeEl || !numEl) return;
 
       let val = source === 'range' ? parseInt(rangeEl.value) : parseInt(numEl.value);
-      if (isNaN(val)) val = rangeEl.min ? parseInt(rangeEl.min) : 1;
+      if (isNaN(val)) val = rangeEl.min ? parseInt(rangeEl.min) : 0;
 
-      // Clamp value
-      if (rangeEl.min && val < parseInt(rangeEl.min)) val = parseInt(rangeEl.min);
-      if (rangeEl.max && val > parseInt(rangeEl.max)) val = parseInt(rangeEl.max);
+      if (rangeEl.min !== '' && val < parseInt(rangeEl.min)) val = parseInt(rangeEl.min);
+      if (rangeEl.max !== '' && val > parseInt(rangeEl.max)) val = parseInt(rangeEl.max);
 
       rangeEl.value = val;
       numEl.value = val;
@@ -1114,7 +1126,6 @@
       settings.defaultCurrency = document.getElementById('setting-currency').value;
       settings.font = document.getElementById('setting-font').value;
 
-      // Read font sizes
       settings.szTitle = parseInt(document.getElementById('setting-sz-title').value) || 42;
       settings.szNum = parseInt(document.getElementById('setting-sz-num').value) || 38;
       settings.szName = parseInt(document.getElementById('setting-sz-name').value) || 38;
@@ -1124,6 +1135,9 @@
       if (document.getElementById('setting-align')) settings.align = document.getElementById('setting-align').value;
       if (document.getElementById('setting-spacing')) {
         settings.spacing = parseInt(document.getElementById('setting-spacing').value) || 32;
+      }
+      if (document.getElementById('setting-line-gap')) {
+        settings.lineGap = parseInt(document.getElementById('setting-line-gap').value) || 8;
       }
 
       settings.enableGradient = document.getElementById('setting-enable-gradient').checked;
@@ -1176,6 +1190,7 @@
       overlayWrapper.style.setProperty('--sz-amt', `${settings.szAmt || 38}px`);
       overlayWrapper.style.setProperty('--sz-cur', `${settings.szCur || 38}px`);
       overlayWrapper.style.setProperty('--item-spacing', `${settings.spacing || 32}px`);
+      overlayWrapper.style.setProperty('--line-gap', `${settings.lineGap !== undefined ? settings.lineGap : 8}px`);
       overlayWrapper.style.setProperty('--queue-color-1', settings.color1);
       overlayWrapper.style.setProperty('--queue-color-2', settings.enableGradient ? settings.color2 : settings.color1);
       overlayWrapper.style.setProperty('--queue-stroke-c', settings.strokeColor);
@@ -1224,7 +1239,6 @@
       sortQueue();
       const currentCurrency = settings.defaultCurrency !== undefined ? settings.defaultCurrency : '';
 
-      // Render Admin Panel List
       const adminList = document.getElementById('admin-queue-list');
       document.getElementById('queue-count-badge').innerText = `${queueList.length} คน`;
 
@@ -1247,11 +1261,9 @@
         }).join('');
       }
 
-      // Render Title with Title Class
       const titleHTML = `<span class="sz-title">${escapeHtml(settings.title)}</span>`;
       document.getElementById('display-title').innerHTML = generateFormattedHTML(titleHTML);
 
-      // Render Overlay Queue View
       const displayList = document.getElementById('display-queue-list');
 
       if (queueList.length === 0) {
@@ -1262,7 +1274,7 @@
           const rightHTML = `<span class="sz-amt">${item.amount}</span><span class="sz-cur">${escapeHtml(currentCurrency)}</span>`;
           
           return `
-            <div style="margin-bottom: 2px;">
+            <div class="queue-item-row">
               ${generateFormattedHTML(leftHTML, rightHTML)}
             </div>
           `;
@@ -1289,10 +1301,8 @@
       if (!name) return;
 
       if (editId) {
-        // Edit existing item
         queueList = queueList.map(item => item.id === editId ? { ...item, name, amount } : item);
       } else {
-        // Add new item
         const newItem = {
           id: Date.now().toString(),
           name: name,
@@ -1347,6 +1357,7 @@
       szCur: 38,
       align: 'left',
       spacing: 32,
+      lineGap: 8,
       enableGradient: true,
       color1: '#ffffff',
       color2: '#38bdf8',
@@ -1406,7 +1417,7 @@
       navigator.clipboard.writeText(input.value).then(() => {
         const btn = event.currentTarget;
         const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> คัดลอกแล้ว!';
+        btn.innerHTML = '<i class="fa-solid fa-copy mr-1"></i> คัดลอกแล้ว!';
         setTimeout(() => { btn.innerHTML = originalText; }, 2000);
       }).catch(() => {
         document.execCommand('copy');
