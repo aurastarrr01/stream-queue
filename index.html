@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Stream Queue Overlay - Advanced Independent Sizing & Theme</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase SDK Imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDNCV7zAiB3WdmTCIIKjnI4-2PHLqalLYY",
+      authDomain: "report-ff-x-sora.firebaseapp.com",
+      projectId: "report-ff-x-sora",
+      storageBucket: "report-ff-x-sora.firebasestorage.app",
+      messagingSenderId: "344175617962",
+      appId: "1:344175617962:web:ba99077561197f582c6dd3",
+      measurementId: "G-RGCVR6KK86"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Dynamic queue ID reading from URL or fallback
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawQueueParam = urlParams.get('queue');
+    const customQueueId = rawQueueParam || (typeof __app_id !== 'undefined' ? __app_id : 'default-streamer-queue');
+    
+    // Public path according to mandatory guidelines
+    const queueDocRef = doc(db, 'artifacts', customQueueId, 'public', 'data', 'queue_state', 'main');
+
+    window.firebaseState = {
+      db,
+      auth,
+      queueDocRef,
+      customQueueId,
+      user: null,
+      isInitialized: false,
+      doc,
+      onSnapshot,
+      setDoc
+    };
+
+    // Authenticate first
+    async function initAuth() {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Firebase auth error:", err);
+      }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.firebaseState.user = user;
+        if (!window.firebaseState.isInitialized) {
+          window.firebaseState.isInitialized = true;
+          if (window.onFirebaseReady) {
+            window.onFirebaseReady();
+          }
+        }
+      }
+    });
+
+    initAuth();
+  </script>
+
+  <!-- Google Fonts: Itim, Prompt, Kanit, Mitr, Bai Jamjuree, Sarabun, Press Start 2P, VT323 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@600;700&family=Itim&family=Kanit:wght@600;700;800&family=Mitr:wght@600;700&family=Press+Start+2P&family=Prompt:wght@600;700;800&family=Sarabun:wght@700;800&family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Itim', 'Prompt', sans-serif;
+      user-select: none;
+    }
+
+    /* Transparent Overlay Mode for TikTok Live Studio */
+    body.mode-overlay {
+      background-color: transparent !important;
+      background-image: none !important;
+      overflow: hidden;
+    }
+
+    /* CUSTOM GRADIENT RANGE SLIDERS */
+    input[type="range"].gradient-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e0f2fe 0%, #38bdf8 50%, #0284c7 100%);
+      outline: none;
+      border: 1px solid #bae6fd;
+    }
+
+    input[type="range"].gradient-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
+      border: 2px solid #0284c7;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"].gradient-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    input[type="range"].gradient-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffffff 0%, #38bdf8 100%);
+      border: 2px solid #0284c7;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+    }
+
+    /* QUEUE TEXT CONTAINER ONLY - ISOLATED VARIABLES */
+    #overlay-wrapper {
+      --font-family: 'Itim';
+      --sz-title: 42px;
+      --sz-num: 38px;
+      --sz-name: 38px;
+      --sz-amt: 38px;
+      --sz-cur: 38px;
+      --item-spacing: 32px;
+      --queue-color-1: #ffffff;
+      --queue-color-2: #38bdf8;
+      --queue-stroke-c: #000000;
+      --queue-stroke-w: 3px;
+    }
+
+    /* TRUE OUTWARD STROKE SYSTEM WITH INDEPENDENT SIZING LAYERS */
+    .queue-text-wrapper {
+      font-family: var(--font-family, 'Itim'), cursive, sans-serif;
+      line-height: 1.25;
+      font-weight: 800;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      white-space: nowrap;
+      gap: var(--item-spacing, 32px);
+    }
+
+    /* Base text layer (Provides height/width layout) */
+    .queue-text-base {
+      position: relative;
+      visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--item-spacing, 32px);
+      width: 100%;
+    }
+
+    /* Stroke Layer (Behind - Outward stroke) */
+    .queue-text-stroke {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--item-spacing, 32px);
+      color: var(--queue-stroke-c, #000000);
+      -webkit-text-stroke-width: calc(var(--queue-stroke-w, 3px) * 2);
+      -webkit-text-stroke-color: var(--queue-stroke-c, #000000);
+      paint-order: stroke fill;
+      stroke-linejoin: round;
+      user-select: none;
+    }
+
+    /* Fill Layer (Front - Untouched fill) */
+    .queue-text-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--item-spacing, 32px);
+      pointer-events: none;
+    }
+
+    /* Element specific font sizes */
+    .sz-num { font-size: var(--sz-num, 38px); }
+    .sz-name { font-size: var(--sz-name, 38px); }
+    .sz-amt { font-size: var(--sz-amt, 38px); }
+    .sz-cur { font-size: var(--sz-cur, 38px); }
+    .sz-title { font-size: var(--sz-title, 42px); }
+
+    /* Fill Color Variations */
+    .fill-solid {
+      color: var(--queue-color-1, #ffffff);
+    }
+
+    .fill-gradient {
+      background: linear-gradient(180deg, var(--queue-color-1, #ffffff), var(--queue-color-2, #38bdf8));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #0284c7;
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-sky-50 via-white to-sky-100 text-slate-800 min-h-screen">
+
+  <div id="app-container" class="min-h-screen p-4 md:p-6 transition-all">
+    
+    <!-- HEADER BAR -->
+    <header id="header-bar" class="max-w-6xl mx-auto mb-6 bg-white/90 backdrop-blur-md border border-sky-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-md shadow-sky-100">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 via-sky-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-sky-300/50">
+          <i class="fa-solid fa-gamepad"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold text-slate-800 tracking-wide flex items-center gap-2">
+            ระบบจัดคิวสตรีมเมอร์ <span class="text-xs bg-sky-100 text-sky-700 font-bold border border-sky-300 px-2.5 py-0.5 rounded-full">ปรับแต่งชื่อลิงก์คิวได้</span>
+          </h1>
+          <p class="text-xs text-slate-500">ปรับขนาดลำดับคิว, ชื่อ, ตัวเลขเงิน และสกุลเงินแยกกันได้อย่างอิสระ</p>
+        </div>
+      </div>
+
+      <!-- Mode Toggle -->
+      <div class="flex items-center gap-1.5 bg-sky-50 p-1.5 rounded-xl border border-sky-200">
+        <button id="btn-mode-split" onclick="switchMode('split')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-300/50">
+          <i class="fa-solid fa-sliders mr-1"></i> แผงควบคุม + ตัวอย่าง
+        </button>
+        <button id="btn-mode-overlay" onclick="switchMode('overlay')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-sky-600 transition">
+          <i class="fa-solid fa-tv mr-1"></i> โหมดสตรีม (Overlay)
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN GRID LAYOUT -->
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- ==================== ADMIN & SETTINGS PANEL ==================== -->
+      <section id="control-panel" class="lg:col-span-6 space-y-5">
+        
+        <!-- LINK CUSTOMIZER CARD -->
+        <div class="p-4 bg-white border border-sky-200 rounded-2xl space-y-3 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-link text-sky-500"></i> ลิงก์นำไปแปะใน TikTok Live Studio
+            </span>
+            <span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded-full border border-sky-200">
+              ID: <span id="current-id-display">default</span>
+            </span>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-semibold text-slate-600">ตั้งชื่อ/รหัสคิวของคุณเอง (เช่น mychannel, room1, game_live)</label>
+            <div class="flex items-center gap-2">
+              <input type="text" id="custom-link-name" placeholder="ระบุชื่อรหัสคิวที่ต้องการ" class="flex-1 bg-slate-50 border border-sky-200 rounded-xl px-3 py-1.5 text-xs font-bold text-sky-800 focus:border-sky-500 focus:bg-white focus:outline-none transition">
+              <button onclick="changeLinkID()" class="bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition shadow-sm">
+                <i class="fa-solid fa-check mr-1"></i> เปลี่ยนรหัสคิว
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-1 border-t border-sky-100">
+            <input type="text" id="widget-url-input" readonly class="w-full bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1 text-[11px] font-mono text-sky-800 select-all focus:outline-none">
+            <button onclick="copyWidgetUrl()" class="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 shadow transition">
+              <i class="fa-solid fa-copy mr-1"></i> คัดลอก
+            </button>
+          </div>
+        </div>
+
+        <!-- DESIGN SETTINGS CARD -->
+        <div class="bg-white border border-sky-200 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
+            <h2 class="text-sm font-bold text-sky-700 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles text-sky-500"></i> ปรับแต่งรูปแบบและขนาด
+            </h2>
+            <!-- Save & Reset Buttons -->
+            <div class="flex items-center gap-2">
+              <button onclick="resetSettings()" class="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-lg transition flex items-center gap-1">
+                <i class="fa-solid fa-rotate-left"></i> รีเซ็ต
+              </button>
+              <button onclick="saveSettingsExplicit()" class="px-3 py-1 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 rounded-lg shadow-sm transition flex items-center gap-1">
+                <i class="fa-solid fa-floppy-disk"></i> เซฟ
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-4 text-xs">
+            <!-- Queue Header Text Input & Global Currency Suffix -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">ข้อความหัวข้อคิว</label>
+                <input type="text" id="setting-title" value="คิวเล่น" oninput="updateSettings()" 
+                  class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3.5 py-2 text-slate-800 font-bold focus:border-sky-500 focus:bg-white focus:outline-none transition">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">หน่วยเงิน (เปลี่ยนทั้งหมด)</label>
+                <input type="text" id="setting-currency" value="บาท" placeholder="เช่น บาท, บูด, .-" oninput="updateSettings()" 
+                  class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3.5 py-2 text-slate-800 font-bold focus:border-sky-500 focus:bg-white focus:outline-none transition">
+              </div>
+            </div>
+
+            <!-- Font Family Selection -->
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">เลือกฟอนต์ (Font)</label>
+              <select id="setting-font" onchange="updateSettings()" class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:border-sky-500 focus:outline-none">
+                <option value="Itim" selected>🍧 Itim (ไอติม)</option>
+                <option value="'Press Start 2P'">🎮 Minecraft / Pixel 8-Bit</option>
+                <option value="'VT323'">🕹️ Retro Arcade Pixel</option>
+                <option value="Prompt">Prompt</option>
+                <option value="Kanit">Kanit</option>
+                <option value="Mitr">Mitr</option>
+                <option value="Bai Jamjuree">Bai Jamjuree</option>
+                <option value="Sarabun">Sarabun</option>
+              </select>
+            </div>
+
+            <!-- COLLAPSIBLE ACCORDION GROUP FOR SIZES & SPACING -->
+            <div class="space-y-2 border-t border-sky-100 pt-3">
+              <span class="font-bold text-slate-700 block mb-1">📐 ปรับขนาดและระยะห่าง (คลิกเพื่อเปิด/ซ่อน)</span>
+
+              <!-- Accordion: Size Title -->
+              <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
+                <button type="button" onclick="toggleAccordion('acc-sz-title')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-heading text-sky-500"></i> ขนาดหัวข้อคิว</span>
+                  <i id="acc-sz-title-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+                </button>
+                <div id="acc-sz-title" class="hidden p-3.5 bg-white border-t border-sky-100 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500 text-[11px]">พิกเซล (px)</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="setting-sz-title-num" min="14" max="100" value="42" oninput="syncControl('sz-title', 'num')" class="w-16 bg-slate-50 border border-sky-300 text-sky-700 font-bold rounded-lg px-2 py-1 text-center text-xs focus:outline-none focus:border-sky-500">
+                      <span class="text-[10px] text-slate-400">px</span>
+                    </div>
+                  </div>
+                  <input type="range" id="setting-sz-title" min="14" max="100" value="42" oninput="syncControl('sz-title', 'range')" class="gradient-slider">
+                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <span>14px</span><span>42px</span><span>100px</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Accordion: Size Num -->
+              <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
+                <button type="button" onclick="toggleAccordion('acc-sz-num')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-list-ol text-sky-500"></i> ขนาดลำดับคิว (1. 2.)</span>
+                  <i id="acc-sz-num-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+                </button>
+                <div id="acc-sz-num" class="hidden p-3.5 bg-white border-t border-sky-100 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500 text-[11px]">พิกเซล (px)</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="setting-sz-num-num" min="14" max="100" value="38" oninput="syncControl('sz-num', 'num')" class="w-16 bg-slate-50 border border-sky-300 text-sky-700 font-bold rounded-lg px-2 py-1 text-center text-xs focus:outline-none focus:border-sky-500">
+                      <span class="text-[10px] text-slate-400">px</span>
+                    </div>
+                  </div>
+                  <input type="range" id="setting-sz-num" min="14" max="100" value="38" oninput="syncControl('sz-num', 'range')" class="gradient-slider">
+                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <span>14px</span><span>38px</span><span>100px</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Accordion: Size Name -->
+              <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
+                <button type="button" onclick="toggleAccordion('acc-sz-name')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-user text-sky-500"></i> ขนาดชื่อผู้เล่น</span>
+                  <i id="acc-sz-name-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+                </button>
+                <div id="acc-sz-name" class="hidden p-3.5 bg-white border-t border-sky-100 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500 text-[11px]">พิกเซล (px)</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="setting-sz-name-num" min="14" max="100" value="38" oninput="syncControl('sz-name', 'num')" class="w-16 bg-slate-50 border border-sky-300 text-sky-700 font-bold rounded-lg px-2 py-1 text-center text-xs focus:outline-none focus:border-sky-500">
+                      <span class="text-[10px] text-slate-400">px</span>
+                    </div>
+                  </div>
+                  <input type="range" id="setting-sz-name" min="14" max="100" value="38" oninput="syncControl('sz-name', 'range')" class="gradient-slider">
+                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <span>14px</span><span>38px</span><span>100px</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Accordion: Size Amount & Currency -->
+              <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
+                <button type="button" onclick="toggleAccordion('acc-sz-amt')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-coins text-sky-500"></i> ขนาดจำนวนเงินและสกุลเงิน</span>
+                  <i id="acc-sz-amt-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+                </button>
+                <div id="acc-sz-amt" class="hidden p-3.5 bg-white border-t border-sky-100 space-y-3">
+                  <div>
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-slate-600 font-semibold">ขนาดตัวเลขเงิน</span>
+                      <div class="flex items-center gap-1">
+                        <input type="number" id="setting-sz-amt-num" min="14" max="100" value="38" oninput="syncControl('sz-amt', 'num')" class="w-14 bg-slate-50 border border-sky-300 text-sky-700 font-bold rounded-lg px-1.5 py-0.5 text-center text-xs focus:outline-none">
+                        <span class="text-[10px] text-slate-400">px</span>
+                      </div>
+                    </div>
+                    <input type="range" id="setting-sz-amt" min="14" max="100" value="38" oninput="syncControl('sz-amt', 'range')" class="gradient-slider">
+                  </div>
+
+                  <div class="pt-2 border-t border-slate-100">
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-slate-600 font-semibold">ขนาดสกุลเงิน</span>
+                      <div class="flex items-center gap-1">
+                        <input type="number" id="setting-sz-cur-num" min="10" max="100" value="38" oninput="syncControl('sz-cur', 'num')" class="w-14 bg-slate-50 border border-sky-300 text-sky-700 font-bold rounded-lg px-1.5 py-0.5 text-center text-xs focus:outline-none">
+                        <span class="text-[10px] text-slate-400">px</span>
+                      </div>
+                    </div>
+                    <input type="range" id="setting-sz-cur" min="10" max="100" value="38" oninput="syncControl('sz-cur', 'range')" class="gradient-slider">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Accordion: Spacing -->
+              <div class="border border-sky-200 rounded-xl overflow-hidden bg-sky-50/50">
+                <button type="button" onclick="toggleAccordion('acc-spacing')" class="w-full px-3.5 py-2.5 flex items-center justify-between text-left font-bold text-slate-700 hover:bg-sky-100/50 transition">
+                  <span class="flex items-center gap-2"><i class="fa-solid fa-arrows-left-right text-sky-500"></i> ระยะห่างรายการ</span>
+                  <i id="acc-spacing-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform"></i>
+                </button>
+                <div id="acc-spacing" class="hidden p-3.5 bg-white border-t border-sky-100 space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500 text-[11px]">พิกเซล (px)</span>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="setting-spacing-num" min="8" max="200" value="32" oninput="syncControl('spacing', 'num')" class="w-16 bg-slate-50 border border-sky-300 text-sky-700 font-bold rounded-lg px-2 py-1 text-center text-xs focus:outline-none focus:border-sky-500">
+                      <span class="text-[10px] text-slate-400">px</span>
+                    </div>
+                  </div>
+                  <input type="range" id="setting-spacing" min="8" max="200" value="32" oninput="syncControl('spacing', 'range')" class="gradient-slider">
+                  <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                    <span>8px</span><span>32px</span><span>200px</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alignment Selection -->
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">การจัดวางตำแหน่ง (Alignment)</label>
+              <select id="setting-align" onchange="updateSettings()" class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3 py-2 text-slate-800 focus:border-sky-500 focus:outline-none">
+                <option value="left">ชิดซ้าย (Left)</option>
+                <option value="center">กึ่งกลาง (Center)</option>
+                <option value="right">ชิดขวา (Right)</option>
+              </select>
+            </div>
+
+            <!-- Color Fill / Gradient Options -->
+            <div class="p-3.5 bg-sky-50/70 rounded-xl border border-sky-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-700">สีตัวหนังสือ (Text Color / Gradient)</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-enable-gradient" onchange="updateSettings()" class="sr-only peer" checked>
+                  <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
+                </label>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] text-slate-500 mb-1">สีที่ 1 (บน / สีหลัก)</label>
+                  <div class="flex items-center gap-2">
+                    <button type="button" id="picker-btn-color1" onclick="openCustomPicker('color1', event)" class="w-8 h-8 rounded-lg border border-sky-300 shadow-sm flex items-center justify-center relative overflow-hidden transition-transform active:scale-95" style="background-color: #ffffff;"></button>
+                    <input type="text" id="setting-color1-hex" value="#ffffff" onchange="syncColorInput('color1')" class="w-full bg-white border border-sky-200 rounded-lg px-2 py-1 text-slate-700 font-mono text-[11px]">
+                  </div>
+                </div>
+
+                <div id="gradient-color2-container">
+                  <label class="block text-[11px] text-slate-500 mb-1">สีที่ 2 (ล่าง)</label>
+                  <div class="flex items-center gap-2">
+                    <button type="button" id="picker-btn-color2" onclick="openCustomPicker('color2', event)" class="w-8 h-8 rounded-lg border border-sky-300 shadow-sm flex items-center justify-center relative overflow-hidden transition-transform active:scale-95" style="background-color: #38bdf8;"></button>
+                    <input type="text" id="setting-color2-hex" value="#38bdf8" onchange="syncColorInput('color2')" class="w-full bg-white border border-sky-200 rounded-lg px-2 py-1 text-slate-700 font-mono text-[11px]">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Outward Stroke Settings -->
+            <div class="p-3.5 bg-sky-50/70 rounded-xl border border-sky-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="font-bold text-slate-700">เส้นขอบขยายออกด้านนอก (Outward Stroke)</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" id="setting-enable-stroke" onchange="updateSettings()" class="sr-only peer" checked>
+                  <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-sky-500"></div>
+                </label>
+              </div>
+
+              <div id="stroke-settings-container" class="grid grid-cols-2 gap-3 items-center">
+                <div>
+                  <label class="block text-[11px] text-slate-500 mb-1">สีขอบ (Stroke Color)</label>
+                  <div class="flex items-center gap-2">
+                    <button type="button" id="picker-btn-stroke" onclick="openCustomPicker('stroke', event)" class="w-8 h-8 rounded-lg border border-sky-300 shadow-sm flex items-center justify-center relative overflow-hidden transition-transform active:scale-95" style="background-color: #000000;"></button>
+                    <input type="text" id="setting-stroke-color-hex" value="#000000" onchange="syncColorInput('stroke')" class="w-full bg-white border border-sky-200 rounded-lg px-2 py-1 text-slate-700 font-mono text-[11px]">
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex justify-between items-center mb-1">
+                    <label class="text-[11px] text-slate-500">ความหนาขอบ</label>
+                    <div class="flex items-center gap-1">
+                      <input type="number" id="setting-stroke-width-num" min="1" max="10" value="3" oninput="syncControl('stroke-width', 'num')" class="w-12 bg-white border border-sky-300 text-sky-700 font-bold rounded-md px-1 py-0.5 text-center text-xs focus:outline-none">
+                      <span class="text-[10px] text-slate-400">px</span>
+                    </div>
+                  </div>
+                  <input type="range" id="setting-stroke-width" min="1" max="10" value="3" oninput="syncControl('stroke-width', 'range')" class="gradient-slider">
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- QUEUE CONTROLLER CARD -->
+        <div class="bg-white border border-sky-200 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-user-plus text-sky-500"></i> จัดการระบบคิว (เพิ่ม/แก้ไขคิว)
+            </h2>
+            <span id="queue-count-badge" class="text-xs bg-sky-100 text-sky-700 px-3 py-1 rounded-full font-bold border border-sky-200">
+              0 คน
+            </span>
+          </div>
+
+          <form id="queue-form" onsubmit="handleFormSubmit(event)" class="space-y-3">
+            <input type="hidden" id="edit-id" value="">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+              <div class="sm:col-span-7">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้เล่น</label>
+                <input type="text" id="input-name" required placeholder="เช่น Us1" 
+                  class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3 py-2 text-slate-800 text-xs focus:border-sky-500 focus:bg-white focus:outline-none transition">
+              </div>
+
+              <div class="sm:col-span-5">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (ตัวเลข)</label>
+                <input type="number" id="input-amount" min="0" step="1" required placeholder="30" 
+                  class="w-full bg-slate-50 border border-sky-200 rounded-xl px-3 py-2 text-slate-800 text-xs focus:border-sky-500 focus:bg-white focus:outline-none transition">
+              </div>
+            </div>
+
+            <!-- Quick Add Amount Buttons -->
+            <div class="grid grid-cols-4 gap-2 pt-1">
+              <button type="button" onclick="addQuickAmount(10)" class="py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs rounded-lg font-bold transition">+10</button>
+              <button type="button" onclick="addQuickAmount(20)" class="py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs rounded-lg font-bold transition">+20</button>
+              <button type="button" onclick="addQuickAmount(50)" class="py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs rounded-lg font-bold transition">+50</button>
+              <button type="button" onclick="addQuickAmount(100)" class="py-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs rounded-lg font-bold transition">+100</button>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+              <button type="submit" id="btn-submit" class="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-md shadow-sky-300/40 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus" id="btn-submit-icon"></i>
+                <span id="btn-submit-text">เพิ่มคิวใหม่</span>
+              </button>
+              <button type="button" id="btn-cancel" onclick="resetForm()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-4 rounded-xl text-xs transition">
+                ยกเลิก
+              </button>
+            </div>
+          </form>
+
+          <!-- ADMIN LIST TABLE -->
+          <div class="mt-5 pt-4 border-t border-sky-100">
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">รายการคิวปัจจุบัน (เรียงตามเงิน)</span>
+              <button onclick="clearAllQueue()" class="text-xs text-rose-500 hover:text-rose-600 transition hover:underline flex items-center gap-1 font-semibold">
+                <i class="fa-solid fa-trash-can"></i> ล้างคิวทั้งหมด
+              </button>
+            </div>
+
+            <div id="admin-queue-list" class="space-y-1.5 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+              <!-- Rendered items -->
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==================== OVERLAY DISPLAY PREVIEW ==================== -->
+      <section id="widget-preview-section" class="lg:col-span-6 flex flex-col items-center">
+        
+        <div id="preview-tag" class="w-full mb-2 flex items-center justify-between text-xs text-slate-500 px-1">
+          <span class="font-bold text-slate-700"><i class="fa-solid fa-eye text-sky-500 mr-1"></i> ตัวอย่างหน้าจอจริง (TikTok Live Overlay)</span>
+          <span class="text-[11px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">พื้นหลังโปร่งใส</span>
+        </div>
+
+        <!-- OVERLAY CONTAINER -->
+        <div id="preview-box-bg" class="w-full p-4 rounded-2xl bg-slate-900 border-2 border-dashed border-sky-300 shadow-xl transition-all">
+          <div id="overlay-wrapper" class="w-full min-h-[340px] flex flex-col items-start justify-start transition-all">
+            
+            <!-- OVERLAY TITLE -->
+            <div id="display-title" class="mb-2">
+              <!-- Rendered Title -->
+            </div>
+
+            <!-- QUEUE ITEMS LIST -->
+            <div id="display-queue-list" class="w-full space-y-1">
+              <!-- Dynamic Items -->
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- CUSTOM COLOR PICKER MODAL/POPOVER -->
+  <div id="custom-picker-popover" class="fixed inset-0 z-50 hidden bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4" onclick="closeCustomPicker(event)">
+    <div class="bg-[#18181b] border border-zinc-800 text-white rounded-2xl p-4 w-[280px] shadow-2xl space-y-3 relative" onclick="event.stopPropagation()">
+      <!-- Tabs header -->
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+        <div class="flex bg-zinc-900 p-0.5 rounded-lg text-xs font-semibold">
+          <span class="px-3 py-1 bg-zinc-800 text-zinc-100 rounded-md">Custom</span>
+        </div>
+        <button onclick="closeCustomPicker()" class="text-zinc-400 hover:text-white text-xs p-1">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Saturation / Value Box Canvas -->
+      <div class="relative w-full h-[180px] rounded-xl overflow-hidden cursor-crosshair select-none" id="picker-sat-container">
+        <canvas id="picker-sat-canvas" class="w-full h-full block rounded-xl"></canvas>
+        <div id="picker-sat-handle" class="absolute w-4 h-4 rounded-full border-2 border-white shadow-md -translate-x-1/2 -translate-y-1/2 pointer-events-none" style="top:0%; left:0%;"></div>
+      </div>
+
+      <!-- Hue Slider -->
+      <div class="relative w-full h-4 rounded-full cursor-pointer select-none" id="picker-hue-container" style="background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);">
+        <div id="picker-hue-handle" class="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-white bg-transparent shadow-md -translate-x-1/2 pointer-events-none" style="left:0%;"></div>
+      </div>
+
+      <!-- Hex Output Input -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 flex items-center justify-between text-xs font-mono">
+        <span class="text-zinc-400 font-bold">#</span>
+        <input type="text" id="picker-hex-input" class="bg-transparent text-white font-bold w-full ml-1 focus:outline-none uppercase" onchange="onPickerHexInputChange(this.value)">
+        <div id="picker-color-preview" class="w-5 h-5 rounded-full border border-zinc-700 shrink-0"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY_QUEUE = 'minimal_queue_data_v7';
+    const STORAGE_KEY_SETTINGS = 'minimal_queue_settings_v7';
+    const broadcastChannel = new BroadcastChannel('minimal_queue_sync_channel');
+
+    let currentPickerTarget = 'color1'; // 'color1' | 'color2' | 'stroke'
+    let currentHSV = { h: 0, s: 1, v: 1 };
+    let isDraggingSat = false;
+    let isDraggingHue = false;
+
+    let queueList = [];
+    let settings = {
+      title: 'คิวเล่น',
+      defaultCurrency: 'บาท',
+      font: 'Itim',
+      szTitle: 42,
+      szNum: 38,
+      szName: 38,
+      szAmt: 38,
+      szCur: 38,
+      align: 'left',
+      spacing: 32,
+      enableGradient: true,
+      color1: '#ffffff',
+      color2: '#38bdf8',
+      enableStroke: true,
+      strokeColor: '#000000',
+      strokeWidth: 3
+    };
+
+    window.onFirebaseReady = function() {
+      listenToFirestore();
+    };
+
+    function listenToFirestore() {
+      const { queueDocRef, onSnapshot } = window.firebaseState;
+      if (!queueDocRef) return;
+      
+      // Listen to real-time updates from Firestore
+      onSnapshot(queueDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.queueList) {
+            queueList = data.queueList;
+          }
+          if (data.settings) {
+            settings = { ...settings, ...data.settings };
+            applySettingsToUI();
+          }
+          renderStyle();
+          renderQueue();
+        } else {
+          // If Firestore is empty, sync initial local state to Firestore
+          saveDataToFirestore();
+        }
+      }, (error) => {
+        console.error("Firestore realtime listener error:", error);
+      });
+    }
+
+    function openCustomPicker(target, evt) {
+      currentPickerTarget = target;
+      let hexColor = '#ffffff';
+
+      if (target === 'color1') hexColor = settings.color1 || '#ffffff';
+      if (target === 'color2') hexColor = settings.color2 || '#38bdf8';
+      if (target === 'stroke') hexColor = settings.strokeColor || '#000000';
+
+      currentHSV = hexToHsv(hexColor);
+      
+      const popover = document.getElementById('custom-picker-popover');
+      popover.classList.remove('hidden');
+
+      initPickerCanvas();
+      updatePickerUI();
+    }
+
+    function closeCustomPicker(evt) {
+      document.getElementById('custom-picker-popover').classList.add('hidden');
+    }
+
+    function initPickerCanvas() {
+      const container = document.getElementById('picker-sat-container');
+      const canvas = document.getElementById('picker-sat-canvas');
+      canvas.width = container.clientWidth || 248;
+      canvas.height = container.clientHeight || 180;
+
+      // Event Listeners for Saturation/Value Drag
+      container.onmousedown = (e) => { isDraggingSat = true; handleSatMove(e); };
+      container.ontouchstart = (e) => { isDraggingSat = true; handleSatMove(e.touches[0]); };
+
+      // Event Listeners for Hue Drag
+      const hueContainer = document.getElementById('picker-hue-container');
+      hueContainer.onmousedown = (e) => { isDraggingHue = true; handleHueMove(e); };
+      hueContainer.ontouchstart = (e) => { isDraggingHue = true; handleHueMove(e.touches[0]); };
+
+      window.onmousemove = (e) => {
+        if (isDraggingSat) handleSatMove(e);
+        if (isDraggingHue) handleHueMove(e);
+      };
+      window.ontouchmove = (e) => {
+        if (isDraggingSat) handleSatMove(e.touches[0]);
+        if (isDraggingHue) handleHueMove(e.touches[0]);
+      };
+      window.onmouseup = window.ontouchend = () => {
+        isDraggingSat = false;
+        isDraggingHue = false;
+      };
+    }
+
+    function handleSatMove(e) {
+      const container = document.getElementById('picker-sat-container');
+      const rect = container.getBoundingClientRect();
+      let x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      let y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+
+      currentHSV.s = x / rect.width;
+      currentHSV.v = 1 - (y / rect.height);
+      updatePickerUI();
+      applyPickerColor();
+    }
+
+    function handleHueMove(e) {
+      const container = document.getElementById('picker-hue-container');
+      const rect = container.getBoundingClientRect();
+      let x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+
+      currentHSV.h = (x / rect.width) * 360;
+      updatePickerUI();
+      applyPickerColor();
+    }
+
+    function updatePickerUI() {
+      const canvas = document.getElementById('picker-sat-canvas');
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // Render Hue base color
+      const pureHueHex = hsvToHex(currentHSV.h, 1, 1);
+      ctx.fillStyle = pureHueHex;
+      ctx.fillRect(0, 0, width, height);
+
+      // Saturation gradient (white to transparent)
+      const gradSat = ctx.createLinearGradient(0, 0, width, 0);
+      gradSat.addColorStop(0, '#ffffff');
+      gradSat.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gradSat;
+      ctx.fillRect(0, 0, width, height);
+
+      // Value gradient (transparent to black)
+      const gradVal = ctx.createLinearGradient(0, 0, 0, height);
+      gradVal.addColorStop(0, 'rgba(0,0,0,0)');
+      gradVal.addColorStop(1, '#000000');
+      ctx.fillStyle = gradVal;
+      ctx.fillRect(0, 0, width, height);
+
+      // Position handle
+      const satHandle = document.getElementById('picker-sat-handle');
+      satHandle.style.left = `${currentHSV.s * 100}%`;
+      satHandle.style.top = `${(1 - currentHSV.v) * 100}%`;
+
+      const hueHandle = document.getElementById('picker-hue-handle');
+      hueHandle.style.left = `${(currentHSV.h / 360) * 100}%`;
+
+      const hex = hsvToHex(currentHSV.h, currentHSV.s, currentHSV.v);
+      document.getElementById('picker-hex-input').value = hex.replace('#', '');
+      document.getElementById('picker-color-preview').style.backgroundColor = hex;
+    }
+
+    function onPickerHexInputChange(val) {
+      let cleanVal = val.trim();
+      if (!cleanVal.startsWith('#')) cleanVal = '#' + cleanVal;
+      if (/^#[0-9A-F]{6}$/i.test(cleanVal)) {
+        currentHSV = hexToHsv(cleanVal);
+        updatePickerUI();
+        applyPickerColor();
+      }
+    }
+
+    function applyPickerColor() {
+      const hex = hsvToHex(currentHSV.h, currentHSV.s, currentHSV.v);
+      if (currentPickerTarget === 'color1') {
+        settings.color1 = hex;
+        document.getElementById('setting-color1-hex').value = hex;
+        document.getElementById('picker-btn-color1').style.backgroundColor = hex;
+      } else if (currentPickerTarget === 'color2') {
+        settings.color2 = hex;
+        document.getElementById('setting-color2-hex').value = hex;
+        document.getElementById('picker-btn-color2').style.backgroundColor = hex;
+      } else if (currentPickerTarget === 'stroke') {
+        settings.strokeColor = hex;
+        document.getElementById('setting-stroke-color-hex').value = hex;
+        document.getElementById('picker-btn-stroke').style.backgroundColor = hex;
+      }
+
+      saveData();
+      renderStyle();
+      renderQueue();
+    }
+
+    // Color conversion utilities
+    function hexToHsv(hex) {
+      let c = hex.replace('#', '');
+      if (c.length === 3) c = c.split('').map(x => x + x).join('');
+      let num = parseInt(c, 16);
+      let r = ((num >> 16) & 255) / 255;
+      let g = ((num >> 8) & 255) / 255;
+      let b = (num & 255) / 255;
+
+      let max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let d = max - min;
+      let h, s = (max === 0 ? 0 : d / max), v = max;
+
+      if (max === min) {
+        h = 0;
+      } else {
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return { h: h * 360, s, v };
+    }
+
+    function hsvToHex(h, s, v) {
+      let r, g, b;
+      let i = Math.floor((h / 360) * 6);
+      let f = (h / 360) * 6 - i;
+      let p = v * (1 - s);
+      let q = v * (1 - f * s);
+      let t = v * (1 - (1 - f) * s);
+
+      switch (i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+      }
+
+      const toHex = x => {
+        const hex = Math.round(x * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    window.onload = function() {
+      loadData();
+      checkUrlParams();
+      setupUrlInput();
+
+      // Multi-window Sync
+      broadcastChannel.onmessage = (event) => {
+        if (event.data) {
+          if (event.data.type === 'QUEUE_UPDATE') {
+            queueList = event.data.payload;
+            renderQueue();
+          } else if (event.data.type === 'SETTINGS_UPDATE') {
+            settings = event.data.payload;
+            applySettingsToUI();
+            renderStyle();
+            renderQueue();
+          }
+        }
+      };
+
+      // Storage Fallback Sync
+      window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY_QUEUE) {
+          queueList = JSON.parse(e.newValue || '[]');
+          renderQueue();
+        }
+        if (e.key === STORAGE_KEY_SETTINGS) {
+          settings = JSON.parse(e.newValue || '{}');
+          applySettingsToUI();
+          renderStyle();
+          renderQueue();
+        }
+      });
+    };
+
+    function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'overlay') {
+        switchMode('overlay');
+      }
+    }
+
+    function setupUrlInput() {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const currentId = window.firebaseState ? window.firebaseState.customQueueId : 'default';
+      
+      document.getElementById('current-id-display').innerText = currentId;
+      document.getElementById('custom-link-name').value = currentId.startsWith('c_') || currentId === 'default-streamer-queue' ? '' : currentId;
+      
+      const overlayUrl = `${baseUrl}?queue=${encodeURIComponent(currentId)}&mode=overlay`;
+      document.getElementById('widget-url-input').value = overlayUrl;
+    }
+
+    function changeLinkID() {
+      const inputVal = document.getElementById('custom-link-name').value.trim();
+      if (!inputVal) return;
+
+      // Clean ID (keep alphanumeric, underscores, hyphens)
+      const cleanId = inputVal.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const url = new URL(window.location.href);
+      url.searchParams.set('queue', cleanId);
+      window.location.href = url.toString();
+    }
+
+    function changeLinkID() {
+      const inputVal = document.getElementById('custom-link-name').value.trim();
+      if (!inputVal) return;
+
+      const cleanId = inputVal.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const newUrl = `${window.location.origin}${window.location.pathname}?queue=${encodeURIComponent(cleanId)}`;
+      window.location.href = newUrl;
+    }
+
+    function loadData() {
+      try {
+        const savedQueue = localStorage.getItem(STORAGE_KEY_QUEUE);
+        if (savedQueue) {
+          queueList = JSON.parse(savedQueue);
+        } else {
+          // Default Sample Queue
+          queueList = [
+            { id: '1', name: 'Us1', amount: 30 },
+            { id: '2', name: 'us2', amount: 20 },
+            { id: '3', name: 'us3', amount: 10 }
+          ];
+        }
+
+        const savedSettings = localStorage.getItem(STORAGE_KEY_SETTINGS);
+        if (savedSettings) {
+          settings = { ...settings, ...JSON.parse(savedSettings) };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      applySettingsToUI();
+      renderAll();
+    }
+
+    async function saveDataToFirestore() {
+      if (!window.firebaseState || !window.firebaseState.user) return;
+      
+      try {
+        await window.firebaseState.setDoc(window.firebaseState.queueDocRef, {
+          queueList: queueList,
+          settings: settings,
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Error saving data to Firestore:", err);
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY_QUEUE, JSON.stringify(queueList));
+      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+
+      broadcastChannel.postMessage({ type: 'QUEUE_UPDATE', payload: queueList });
+      broadcastChannel.postMessage({ type: 'SETTINGS_UPDATE', payload: settings });
+
+      // Sync data live across all devices using Firestore
+      saveDataToFirestore();
+    }
+
+    function applySettingsToUI() {
+      document.getElementById('setting-title').value = settings.title || 'คิวเล่น';
+      document.getElementById('setting-currency').value = settings.defaultCurrency !== undefined ? settings.defaultCurrency : 'บาท';
+      document.getElementById('setting-font').value = settings.font || 'Itim';
+
+      // Font Sizes - Range & Number Inputs
+      setControlValues('sz-title', settings.szTitle || 42);
+      setControlValues('sz-num', settings.szNum || 38);
+      setControlValues('sz-name', settings.szName || 38);
+      setControlValues('sz-amt', settings.szAmt || 38);
+      setControlValues('sz-cur', settings.szCur || 38);
+      setControlValues('spacing', settings.spacing || 32);
+      
+      if (document.getElementById('setting-align')) document.getElementById('setting-align').value = settings.align || 'left';
+
+      document.getElementById('setting-enable-gradient').checked = settings.enableGradient;
+      document.getElementById('setting-color1-hex').value = settings.color1 || '#ffffff';
+      document.getElementById('picker-btn-color1').style.backgroundColor = settings.color1 || '#ffffff';
+
+      document.getElementById('setting-color2-hex').value = settings.color2 || '#38bdf8';
+      document.getElementById('picker-btn-color2').style.backgroundColor = settings.color2 || '#38bdf8';
+
+      document.getElementById('setting-enable-stroke').checked = settings.enableStroke;
+      document.getElementById('setting-stroke-color-hex').value = settings.strokeColor || '#000000';
+      document.getElementById('picker-btn-stroke').style.backgroundColor = settings.strokeColor || '#000000';
+      setControlValues('stroke-width', settings.strokeWidth || 3);
+
+      document.getElementById('gradient-color2-container').style.display = settings.enableGradient ? 'block' : 'none';
+      document.getElementById('stroke-settings-container').style.display = settings.enableStroke ? 'grid' : 'none';
+    }
+
+    function setControlValues(key, val) {
+      const rangeEl = document.getElementById(`setting-${key}`);
+      const numEl = document.getElementById(`setting-${key}-num`);
+      if (rangeEl) rangeEl.value = val;
+      if (numEl) numEl.value = val;
+    }
+
+    function syncControl(key, source) {
+      const rangeEl = document.getElementById(`setting-${key}`);
+      const numEl = document.getElementById(`setting-${key}-num`);
+
+      if (!rangeEl || !numEl) return;
+
+      let val = source === 'range' ? parseInt(rangeEl.value) : parseInt(numEl.value);
+      if (isNaN(val)) val = rangeEl.min ? parseInt(rangeEl.min) : 1;
+
+      // Clamp value
+      if (rangeEl.min && val < parseInt(rangeEl.min)) val = parseInt(rangeEl.min);
+      if (rangeEl.max && val > parseInt(rangeEl.max)) val = parseInt(rangeEl.max);
+
+      rangeEl.value = val;
+      numEl.value = val;
+
+      updateSettings();
+    }
+
+    function updateSettings() {
+      settings.title = document.getElementById('setting-title').value || 'คิวเล่น';
+      settings.defaultCurrency = document.getElementById('setting-currency').value;
+      settings.font = document.getElementById('setting-font').value;
+
+      // Read font sizes
+      settings.szTitle = parseInt(document.getElementById('setting-sz-title').value) || 42;
+      settings.szNum = parseInt(document.getElementById('setting-sz-num').value) || 38;
+      settings.szName = parseInt(document.getElementById('setting-sz-name').value) || 38;
+      settings.szAmt = parseInt(document.getElementById('setting-sz-amt').value) || 38;
+      settings.szCur = parseInt(document.getElementById('setting-sz-cur').value) || 38;
+
+      if (document.getElementById('setting-align')) settings.align = document.getElementById('setting-align').value;
+      if (document.getElementById('setting-spacing')) {
+        settings.spacing = parseInt(document.getElementById('setting-spacing').value) || 32;
+      }
+
+      settings.enableGradient = document.getElementById('setting-enable-gradient').checked;
+      settings.enableStroke = document.getElementById('setting-enable-stroke').checked;
+      if (document.getElementById('setting-stroke-width')) {
+        settings.strokeWidth = parseInt(document.getElementById('setting-stroke-width').value) || 3;
+      }
+
+      document.getElementById('gradient-color2-container').style.display = settings.enableGradient ? 'block' : 'none';
+      document.getElementById('stroke-settings-container').style.display = settings.enableStroke ? 'grid' : 'none';
+
+      saveData();
+      renderStyle();
+      renderQueue();
+    }
+
+    function syncColorInput(type) {
+      if (type === 'color1') {
+        const val = document.getElementById('setting-color1-hex').value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          settings.color1 = val;
+          document.getElementById('picker-btn-color1').style.backgroundColor = val;
+          updateSettings();
+        }
+      } else if (type === 'color2') {
+        const val = document.getElementById('setting-color2-hex').value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          settings.color2 = val;
+          document.getElementById('picker-btn-color2').style.backgroundColor = val;
+          updateSettings();
+        }
+      } else if (type === 'stroke') {
+        const val = document.getElementById('setting-stroke-color-hex').value;
+        if (/^#[0-9A-F]{6}$/i.test(val)) {
+          settings.strokeColor = val;
+          document.getElementById('picker-btn-stroke').style.backgroundColor = val;
+          updateSettings();
+        }
+      }
+    }
+
+    function renderStyle() {
+      const overlayWrapper = document.getElementById('overlay-wrapper');
+      if (!overlayWrapper) return;
+
+      overlayWrapper.style.setProperty('--font-family', settings.font);
+      overlayWrapper.style.setProperty('--sz-title', `${settings.szTitle || 42}px`);
+      overlayWrapper.style.setProperty('--sz-num', `${settings.szNum || 38}px`);
+      overlayWrapper.style.setProperty('--sz-name', `${settings.szName || 38}px`);
+      overlayWrapper.style.setProperty('--sz-amt', `${settings.szAmt || 38}px`);
+      overlayWrapper.style.setProperty('--sz-cur', `${settings.szCur || 38}px`);
+      overlayWrapper.style.setProperty('--item-spacing', `${settings.spacing || 32}px`);
+      overlayWrapper.style.setProperty('--queue-color-1', settings.color1);
+      overlayWrapper.style.setProperty('--queue-color-2', settings.enableGradient ? settings.color2 : settings.color1);
+      overlayWrapper.style.setProperty('--queue-stroke-c', settings.strokeColor);
+      overlayWrapper.style.setProperty('--queue-stroke-w', settings.enableStroke ? `${settings.strokeWidth}px` : '0px');
+
+      if (settings.align === 'center') {
+        overlayWrapper.style.alignItems = 'center';
+        overlayWrapper.style.textAlign = 'center';
+      } else if (settings.align === 'right') {
+        overlayWrapper.style.alignItems = 'flex-end';
+        overlayWrapper.style.textAlign = 'right';
+      } else {
+        overlayWrapper.style.alignItems = 'flex-start';
+        overlayWrapper.style.textAlign = 'left';
+      }
+    }
+
+    function generateFormattedHTML(leftHTML, rightHTML = '') {
+      const fillClass = settings.enableGradient ? 'fill-gradient' : 'fill-solid';
+      const strokeStyle = settings.enableStroke ? '' : 'display: none;';
+
+      if (rightHTML !== '') {
+        return `
+          <div class="queue-text-wrapper">
+            <div class="queue-text-base"><span>${leftHTML}</span><span>${rightHTML}</span></div>
+            <div class="queue-text-stroke" style="${strokeStyle}"><span>${leftHTML}</span><span>${rightHTML}</span></div>
+            <div class="queue-text-fill ${fillClass}"><span>${leftHTML}</span><span>${rightHTML}</span></div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="queue-text-wrapper">
+          <div class="queue-text-base">${leftHTML}</div>
+          <div class="queue-text-stroke" style="${strokeStyle}">${leftHTML}</div>
+          <div class="queue-text-fill ${fillClass}">${leftHTML}</div>
+        </div>
+      `;
+    }
+
+    function sortQueue() {
+      queueList.sort((a, b) => b.amount - a.amount);
+    }
+
+    function renderQueue() {
+      sortQueue();
+      const currentCurrency = settings.defaultCurrency !== undefined ? settings.defaultCurrency : '';
+
+      // Render Admin Panel List
+      const adminList = document.getElementById('admin-queue-list');
+      document.getElementById('queue-count-badge').innerText = `${queueList.length} คน`;
+
+      if (queueList.length === 0) {
+        adminList.innerHTML = `<div class="text-xs text-slate-400 py-3 text-center">ยังไม่มีคิวในขณะนี้</div>`;
+      } else {
+        adminList.innerHTML = queueList.map((item, index) => {
+          return `
+            <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-sky-100 text-xs">
+              <span class="font-bold text-slate-800">
+                <span class="text-sky-600 font-mono mr-1">${index + 1}.</span> ${escapeHtml(item.name)} 
+                <span class="text-blue-600 font-mono ml-2">(${item.amount}${escapeHtml(currentCurrency)})</span>
+              </span>
+              <div class="flex gap-1.5">
+                <button onclick="editItem('${item.id}')" class="p-1 text-sky-600 hover:text-sky-800 transition" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button onclick="deleteItem('${item.id}')" class="p-1 text-slate-400 hover:text-rose-500 transition" title="ลบ"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Title with Title Class
+      const titleHTML = `<span class="sz-title">${escapeHtml(settings.title)}</span>`;
+      document.getElementById('display-title').innerHTML = generateFormattedHTML(titleHTML);
+
+      // Render Overlay Queue View
+      const displayList = document.getElementById('display-queue-list');
+
+      if (queueList.length === 0) {
+        displayList.innerHTML = generateFormattedHTML('<span class="sz-name">-</span>');
+      } else {
+        displayList.innerHTML = queueList.map((item, index) => {
+          const leftHTML = `<span class="sz-num">${index + 1}. </span><span class="sz-name">${escapeHtml(item.name)}</span>`;
+          const rightHTML = `<span class="sz-amt">${item.amount}</span><span class="sz-cur">${escapeHtml(currentCurrency)}</span>`;
+          
+          return `
+            <div style="margin-bottom: 2px;">
+              ${generateFormattedHTML(leftHTML, rightHTML)}
+            </div>
+          `;
+        }).join('');
+      }
+
+      renderStyle();
+    }
+
+    function renderAll() {
+      renderStyle();
+      renderQueue();
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const editId = document.getElementById('edit-id').value;
+      const nameInput = document.getElementById('input-name');
+      const amountInput = document.getElementById('input-amount');
+
+      const name = nameInput.value.trim();
+      const amount = parseInt(amountInput.value) || 0;
+
+      if (!name) return;
+
+      if (editId) {
+        // Edit existing item
+        queueList = queueList.map(item => item.id === editId ? { ...item, name, amount } : item);
+      } else {
+        // Add new item
+        const newItem = {
+          id: Date.now().toString(),
+          name: name,
+          amount: amount
+        };
+        queueList.push(newItem);
+      }
+
+      saveData();
+      renderQueue();
+      resetForm();
+    }
+
+    function editItem(id) {
+      const item = queueList.find(q => q.id === id);
+      if (!item) return;
+
+      document.getElementById('edit-id').value = item.id;
+      document.getElementById('input-name').value = item.name;
+      document.getElementById('input-amount').value = item.amount;
+
+      document.getElementById('btn-submit-text').innerText = 'บันทึกการแก้ไข';
+      document.getElementById('btn-submit-icon').className = 'fa-solid fa-floppy-disk';
+      document.getElementById('btn-cancel').classList.remove('hidden');
+    }
+
+    function deleteItem(id) {
+      queueList = queueList.filter(item => item.id !== id);
+      saveData();
+      renderQueue();
+      if (document.getElementById('edit-id').value === id) {
+        resetForm();
+      }
+    }
+
+    function clearAllQueue() {
+      if (queueList.length === 0) return;
+      queueList = [];
+      saveData();
+      renderQueue();
+      resetForm();
+    }
+
+    const DEFAULT_SETTINGS = {
+      title: 'คิวเล่น',
+      defaultCurrency: 'บาท',
+      font: 'Itim',
+      szTitle: 42,
+      szNum: 38,
+      szName: 38,
+      szAmt: 38,
+      szCur: 38,
+      align: 'left',
+      spacing: 32,
+      enableGradient: true,
+      color1: '#ffffff',
+      color2: '#38bdf8',
+      enableStroke: true,
+      strokeColor: '#000000',
+      strokeWidth: 3
+    };
+
+    function toggleAccordion(id) {
+      const content = document.getElementById(id);
+      const icon = document.getElementById(`${id}-icon`);
+      if (content) {
+        const isHidden = content.classList.contains('hidden');
+        if (isHidden) {
+          content.classList.remove('hidden');
+          if (icon) icon.style.transform = 'rotate(180deg)';
+        } else {
+          content.classList.add('hidden');
+          if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+      }
+    }
+
+    function saveSettingsExplicit() {
+      saveData();
+      const btn = event.currentTarget;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> บันทึกแล้ว';
+      setTimeout(() => { btn.innerHTML = originalText; }, 1500);
+    }
+
+    function resetSettings() {
+      settings = { ...DEFAULT_SETTINGS };
+      applySettingsToUI();
+      saveData();
+      renderStyle();
+      renderQueue();
+    }
+
+    function resetForm() {
+      document.getElementById('edit-id').value = '';
+      document.getElementById('queue-form').reset();
+      document.getElementById('btn-submit-text').innerText = 'เพิ่มคิวใหม่';
+      document.getElementById('btn-submit-icon').className = 'fa-solid fa-plus';
+      document.getElementById('btn-cancel').classList.add('hidden');
+    }
+
+    function addQuickAmount(val) {
+      const amountInput = document.getElementById('input-amount');
+      const currentVal = parseInt(amountInput.value) || 0;
+      amountInput.value = currentVal + val;
+    }
+
+    function copyWidgetUrl() {
+      const input = document.getElementById('widget-url-input');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(() => {
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> คัดลอกแล้ว!';
+        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+      }).catch(() => {
+        document.execCommand('copy');
+      });
+    }
+
+    function switchMode(mode) {
+      const headerBar = document.getElementById('header-bar');
+      const controlPanel = document.getElementById('control-panel');
+      const widgetSection = document.getElementById('widget-preview-section');
+      const previewTag = document.getElementById('preview-tag');
+      const previewBoxBg = document.getElementById('preview-box-bg');
+
+      if (mode === 'overlay') {
+        document.body.classList.add('mode-overlay');
+        headerBar.classList.add('hidden');
+        controlPanel.classList.add('hidden');
+        previewTag.classList.add('hidden');
+
+        widgetSection.className = "w-full min-h-screen p-2";
+        previewBoxBg.className = "w-full border-none p-0 bg-transparent shadow-none";
+      } else {
+        document.body.classList.remove('mode-overlay');
+        headerBar.classList.remove('hidden');
+        controlPanel.classList.remove('hidden');
+        previewTag.classList.remove('hidden');
+
+        widgetSection.className = "lg:col-span-6 flex flex-col items-center";
+        previewBoxBg.className = "w-full p-4 rounded-2xl bg-slate-900 border-2 border-dashed border-sky-300 shadow-xl transition-all";
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+  </script>
+</body>
+</html>
